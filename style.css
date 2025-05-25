@@ -1,0 +1,65 @@
+body {
+    background: #f8f4ed;
+    font-family: Georgia, serif;
+    margin: 0; padding: 0;
+}
+.header {
+    background: #222;
+    color: #fff;
+    padding: 1em 2em;
+    text-align: center;
+    letter-spacing: 2px;
+}
+.container {
+    max-width: 600px;
+    margin: 2em auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px #0001;
+    padding: 2em;
+}
+h1, h2 {
+    text-align: center;
+    color: #333;
+}
+ul.pdf-list {
+    list-style: none;
+    padding: 0;
+}
+ul.pdf-list li {
+    margin: 1.2em 0;
+    padding: .7em 1.2em;
+    border-radius: 8px;
+    transition: background .2s;
+}
+ul.pdf-list li:hover {
+    background: #67aec830;
+}
+a.pdf-link {
+    text-decoration: none;
+    color: #3498db;
+    font-size: 1.1em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+a.pdf-link span {
+    font-size: 1.4em;
+}
+.voltar {
+    display: inline-block;
+    margin-top: 2em;
+    background: #67aec8;
+    color: #fff;
+    border-radius: 8px;
+    padding: .7em 1.5em;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background .2s;
+}
+.voltar:hover {
+    background: #2e8198;
+}
+@media (max-width: 600px) {
+    .container { padding: 1em; }
+}
