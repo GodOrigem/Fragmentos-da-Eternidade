@@ -7,151 +7,136 @@
     <!-- PageFlip CSS -->
     <link rel="stylesheet" href="/pageflip/page-flip.browser.min.css">
     <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            background: #222;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-        }
-        #container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        #flipbook {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100vw;
-            height: 100vh;
-        }
-        .stf__page {
-            background: #fff !important;
-        }
-        #fullscreen-btn {
-            position:fixed;top:16px;right:16px;z-index:999;
-            padding:10px 16px;font-size:16px;border:none;border-radius:8px;
-            background:#222;color:#fff;cursor:pointer;opacity:0.8;
-        }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #222;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+#container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#flipbook {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+}
+.stf__page {
+    background: #fff !important;
+}
     </style>
 </head>
 <body>
-  <button id="fullscreen-btn">⛶ Tela cheia</button>
-  <div id="container">
-      <div id="flipbook"></div>
-  </div>
-  <!-- PDF.js -->
-  <script src="/pdfjs/pdf.min.js"></script>
-  <script src="/pdfjs/pdf.worker.min.js"></script>
-  <!-- PageFlip -->
-  <script src="/pageflip/page-flip.browser.min.js"></script>
-  <script>
-    // Botão fullscreen
-    document.getElementById('fullscreen-btn').onclick = function() {
-        const elem = document.documentElement;
-        if (!document.fullscreenElement) {
-            if (elem.requestFullscreen) elem.requestFullscreen();
-            else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
-            else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
-        } else {
-            if (document.exitFullscreen) document.exitFullscreen();
-            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-            else if (document.msExitFullscreen) document.msExitFullscreen();
-        }
-    };
-    document.addEventListener("fullscreenchange", function() {
-        const btn = document.getElementById('fullscreen-btn');
-        if (!document.fullscreenElement) btn.innerText = "⛶ Tela cheia";
-        else btn.innerText = "⛶ Sair da Tela cheia";
-    });
+  <button id="fullscreen-btn" style="
+  position:fixed;top:16px;right:16px;z-index:999;
+  padding:10px 16px;font-size:16px;border:none;border-radius:8px;
+  background:#222;color:#fff;cursor:pointer;opacity:0.8;">⛶ Tela cheia</button>
+    <div id="container">
+        <div id="flipbook"></div>
+    </div>
+    <!-- PDF.js -->
+    <script src="/pdfjs/pdf.min.js"></script>
+    <script src="/pdfjs/pdf.worker.min.js"></script>
+    <!-- PageFlip -->
+    <script src="/pageflip/page-flip.browser.min.js"></script>
+    <script>
+document.getElementById('fullscreen-btn').onclick = function() {
+    const elem = document.documentElement; // Pega o <html>
+    if (!document.fullscreenElement) {
+        if (elem.requestFullscreen) elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen(); // Safari
+        else if (elem.msRequestFullscreen) elem.msRequestFullscreen(); // IE11
+        this.innerText = "⛶ Sair da Tela cheia";
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
+        this.innerText = "⛶ Tela cheia";
+    }
+};
 
-    // PDF Flipbook preenchendo ao máximo sem distorcer e com 4X ALTA RESOLUÇÃO
-    const PDF_PATH = "/PDF/Fragmentos-da-Eternidade.pdf"; // Seu PDF aqui
+document.addEventListener("fullscreenchange", function() {
+    const btn = document.getElementById('fullscreen-btn');
+    if (!document.fullscreenElement) btn.innerText = "⛶ Tela cheia";
+    else btn.innerText = "⛶ Sair da Tela cheia";
+});
+</script>
+    <script>
+        const PDF_PATH = "/PDF/Fragmentos-da-Eternidade.pdf"; // Troque aqui para seu arquivo PDF
 
-    async function renderPDF() {
-        const pdf = await pdfjsLib.getDocument(PDF_PATH).promise;
-        const firstPage = await pdf.getPage(1);
-        const viewport = firstPage.getViewport({ scale: 1 });
-        const aspectRatio = viewport.width / viewport.height;
-
-        function getBestFitSize() {
-            const vw = window.innerWidth * 0.98;
-            const vh = window.innerHeight * 0.98;
-            let width = vw, height = vw / aspectRatio;
-            if (height > vh) {
-                height = vh;
-                width = vh * aspectRatio;
+        async function renderPDF() {
+            // Carrega PDF com pdf.js
+            const pdf = await pdfjsLib.getDocument(PDF_PATH).promise;
+            const pages = [];
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                // Renderiza página em um canvas temporário
+                const viewport = page.getViewport({ scale: 2 });
+                const canvas = document.createElement('canvas');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                // Salva como imagem base64 (para o efeito de livro)
+                pages.push(canvas.toDataURL());
             }
-            return { width: Math.floor(width), height: Math.floor(height) };
+            return pages;
         }
 
-        const { width, height } = getBestFitSize();
-        const resolutionScale = 4; // <<< 4x resolução!
+     function criarLivro(paginas) {
+    const book = document.getElementById('flipbook');
+    book.innerHTML = '';
 
-        const pages = [];
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            const page = await pdf.getPage(pageNum);
+    // Proporção típica de página A4 (você pode ajustar conforme seu PDF)
+    const aspectRatio = 600 / 850;
 
-            const canvas = document.createElement('canvas');
-            canvas.width = width * resolutionScale;
-            canvas.height = height * resolutionScale;
-            canvas.style.width = width + "px";
-            canvas.style.height = height + "px";
-            const vp = page.getViewport({ scale: (width * resolutionScale) / viewport.width });
-            await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
-            pages.push(canvas.toDataURL());
+    function getBestFitSize() {
+        const vw = window.innerWidth * 0.98; // margem mínima
+        const vh = window.innerHeight * 0.98;
+        let width = vw, height = vw / aspectRatio;
+        if (height > vh) {
+            height = vh;
+            width = vh * aspectRatio;
         }
-        return { pages, aspectRatio };
+        return { width: Math.floor(width), height: Math.floor(height) };
     }
 
-    function criarLivro(paginas, aspectRatio) {
-        const book = document.getElementById('flipbook');
-        book.innerHTML = '';
-
-        function getBestFitSize() {
-            const vw = window.innerWidth * 0.98;
-            const vh = window.innerHeight * 0.98;
-            let width = vw, height = vw / aspectRatio;
-            if (height > vh) {
-                height = vh;
-                width = vh * aspectRatio;
-            }
-            return { width: Math.floor(width), height: Math.floor(height) };
-        }
-
-        let pageFlip;
-
-        function mountPageFlip() {
-            const { width, height } = getBestFitSize();
-            book.innerHTML = '';
-            pageFlip = new St.PageFlip(book, {
-                width: width,
-                height: height,
-                size: "fixed",
-                minWidth: 100,
-                minHeight: 100,
-                maxWidth: 4096,
-                maxHeight: 4096,
-                maxShadowOpacity: 0.5,
-                showCover: false,
-                mobileScrollSupport: true
-            });
-            pageFlip.loadFromImages(paginas);
-        }
-
-        mountPageFlip();
-
+    function mountPageFlip() {
+        // Descobre o melhor tamanho
+        const { width, height } = getBestFitSize();
+        // Cria o livro
+        const pageFlip = new St.PageFlip(book, {
+            width: width,
+            height: height,
+            size: "fixed", // mantém proporção!
+            minWidth: 100,
+            minHeight: 100,
+            maxWidth: 4096,
+            maxHeight: 4096,
+            maxShadowOpacity: 0.5,
+            showCover: false,
+            mobileScrollSupport: true
+        });
+        pageFlip.loadFromImages(paginas);
+        // Faz o flipbook se reajustar ao redimensionar a janela/tela
         window.onresize = () => {
-            mountPageFlip();
+            const { width, height } = getBestFitSize();
+            pageFlip.updateState({ width, height });
         };
     }
 
-    // Carrega e monta o livro
-    renderPDF().then(res => criarLivro(res.pages, res.aspectRatio));
-  </script>
+    mountPageFlip();
+}
+
+        // Carrega e renderiza
+        renderPDF().then(criarLivro);
+    </script>
 </body>
 </html>
