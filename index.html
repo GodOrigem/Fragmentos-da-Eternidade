@@ -2,163 +2,156 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Flipbook de PDF</title>
+    <title>Leitor de PDF estilo Livro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- PageFlip CSS local (2.0.7) -->
-    <link rel="stylesheet" href="pageflip/page-flip.browser.min.css">
+    <!-- PageFlip CSS -->
+    <link rel="stylesheet" href="/pageflip/page-flip.browser.min.css">
     <style>
-        html, body { margin:0; padding:0; height:100%; width:100%; background:#222; overflow:hidden; }
-        #flipbook { position:fixed; top:0; left:0; width:100vw; height:100vh; }
-
-        /* COLAR AS PÁGINAS (tira o espaço entre as folhas) */
-        .stf__outer, .stf__inner, .stf__page, .stf__block {
-            gap: 0 !important; margin: 0 !important; padding: 0 !important;
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: #222;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #flipbook {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
         }
         .stf__page {
-            box-shadow: none !important; border-radius: 0 !important; background: #fff !important;
-        }
-        .stf__block { background: #fff !important; }
-        #flipbook .stf__outer { justify-content: center !important; }
-        #flipbook .stf__page { margin: 0 !important; }
-        #flipbook canvas {
-            margin: 0 !important; border-radius: 0 !important; box-shadow: none !important;
             background: #fff !important;
         }
-        /* Botões e UI */
-        #carregando { position:fixed; top:0; left:0; width:100vw; height:100vh;
-            display:flex; align-items:center; justify-content:center;
-            color:#fff; background:#222; font-size:2em; z-index:10; }
-        .page-btns { position:fixed; bottom:2vh; left:50%; transform:translateX(-50%);
-            display:flex; gap:1.5em; z-index:20;}
-        .page-btns button, .page-btns input[type=range] {
-            background:#fff2; color:#fff; border:none; border-radius:6px;
-            padding:0.7em 1.4em; font-size:1.3em; cursor:pointer; transition:background .2s;
-        }
-        .page-btns button:hover { background: #67aec8; }
-        .fullscreen-btn { position:fixed; top:2vh; right:2vw; z-index:30;
-            background:#fff2; color:#fff; border:none; border-radius:6px;
-            padding:0.7em 1.1em; font-size:1.1em; cursor:pointer; transition:background .2s;
-        }
-        .fullscreen-btn:hover { background: #67aec8; }
-        @media (max-width: 700px) {
-            .page-btns { bottom: 1vh; }
-            .fullscreen-btn { top:1vh; right:1vw; font-size:1em; }
+        #fullscreen-btn {
+            position:fixed;top:16px;right:16px;z-index:999;
+            padding:10px 16px;font-size:16px;border:none;border-radius:8px;
+            background:#222;color:#fff;cursor:pointer;opacity:0.8;
         }
     </style>
 </head>
 <body>
-    <div id="carregando">Carregando páginas...</div>
-    <div id="flipbook"></div>
-    <div class="page-btns" style="display:none;">
-        <button id="prev-page">⟨</button>
-        <input type="range" id="page-slider" min="1" max="2" value="1" style="width:120px;">
-        <button id="next-page">⟩</button>
-    </div>
-    <button class="fullscreen-btn" id="toggle-full">🗖 Tela Cheia</button>
-
-    <!-- PDF.js local -->
-    <script src="pdfjs/pdf.min.js"></script>
-    <!-- PageFlip local (2.0.7) -->
-    <script src="pageflip/page-flip.browser.min.js"></script>
-    <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdfjs/pdf.worker.min.js';
-
-    function getQueryParam(nome) {
-        const params = new URLSearchParams(window.location.search);
-        return params.get(nome) || '';
-    }
-    const arquivo = getQueryParam('file') || "PDF/Fragmentos-da-Eternidade.pdf";
-    const titulo = getQueryParam('nome');
-    document.title = titulo ? titulo + " – Flipbook" : "Flipbook de PDF";
-    if (!arquivo) {
-        document.getElementById('carregando').textContent = 'PDF não encontrado.';
-        throw new Error('PDF não encontrado');
-    }
-
-    function getPageFlipCtor() {
-        if (window.PageFlip) return window.PageFlip;
-        if (window.St && window.St.PageFlip) return window.St.PageFlip;
-        return null;
-    }
-
-    async function renderFlipbook(pdfUrl) {
-        const FlipCtor = getPageFlipCtor();
-        if (!FlipCtor) {
-            document.getElementById('carregando').textContent =
-                'Erro: Biblioteca PageFlip não foi carregada!';
-            return;
+  <button id="fullscreen-btn">⛶ Tela cheia</button>
+  <div id="container">
+      <div id="flipbook"></div>
+  </div>
+  <!-- PDF.js -->
+  <script src="/pdfjs/pdf.min.js"></script>
+  <script src="/pdfjs/pdf.worker.min.js"></script>
+  <!-- PageFlip -->
+  <script src="/pageflip/page-flip.browser.min.js"></script>
+  <script>
+    // Botão fullscreen
+    document.getElementById('fullscreen-btn').onclick = function() {
+        const elem = document.documentElement;
+        if (!document.fullscreenElement) {
+            if (elem.requestFullscreen) elem.requestFullscreen();
+            else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+            else if (elem.msRequestFullscreen) elem.msRequestFullscreen();
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            else if (document.msExitFullscreen) document.msExitFullscreen();
         }
-        try {
-            const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
-            const numPages = pdf.numPages;
-            const pageImages = [];
-            for (let i = 1; i <= numPages; i++) {
-                const page = await pdf.getPage(i);
-                // Tamanho colado/centralizado
-                const viewport = page.getViewport({ scale: Math.min(2, window.innerWidth / 1100) });
-                const canvas = document.createElement('canvas');
-                canvas.width = viewport.width;
-                canvas.height = viewport.height;
-                const context = canvas.getContext('2d');
-                await page.render({ canvasContext: context, viewport: viewport }).promise;
-                pageImages.push(canvas.toDataURL('image/png'));
-                document.getElementById('carregando').textContent = `Carregando página ${i} de ${numPages}...`;
-            }
-            document.getElementById('carregando').style.display = 'none';
+    };
+    document.addEventListener("fullscreenchange", function() {
+        const btn = document.getElementById('fullscreen-btn');
+        if (!document.fullscreenElement) btn.innerText = "⛶ Tela cheia";
+        else btn.innerText = "⛶ Sair da Tela cheia";
+    });
 
-            // Cria o flipbook colado
-            const flip = new FlipCtor(document.getElementById('flipbook'), {
-                width: Math.min(1100, window.innerWidth*0.99),
-                height: Math.min(980, window.innerHeight*0.97),
-                size: 'stretch',
-                maxShadowOpacity: 0.6,
+    // PDF Flipbook preenchendo ao máximo sem distorcer e com 4X ALTA RESOLUÇÃO
+    const PDF_PATH = "/PDF/Fragmentos-da-Eternidade.pdf"; // Seu PDF aqui
+
+    async function renderPDF() {
+        const pdf = await pdfjsLib.getDocument(PDF_PATH).promise;
+        const firstPage = await pdf.getPage(1);
+        const viewport = firstPage.getViewport({ scale: 1 });
+        const aspectRatio = viewport.width / viewport.height;
+
+        function getBestFitSize() {
+            const vw = window.innerWidth * 0.98;
+            const vh = window.innerHeight * 0.98;
+            let width = vw, height = vw / aspectRatio;
+            if (height > vh) {
+                height = vh;
+                width = vh * aspectRatio;
+            }
+            return { width: Math.floor(width), height: Math.floor(height) };
+        }
+
+        const { width, height } = getBestFitSize();
+        const resolutionScale = 4; // <<< 4x resolução!
+
+        const pages = [];
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width * resolutionScale;
+            canvas.height = height * resolutionScale;
+            canvas.style.width = width + "px";
+            canvas.style.height = height + "px";
+            const vp = page.getViewport({ scale: (width * resolutionScale) / viewport.width });
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+            pages.push(canvas.toDataURL());
+        }
+        return { pages, aspectRatio };
+    }
+
+    function criarLivro(paginas, aspectRatio) {
+        const book = document.getElementById('flipbook');
+        book.innerHTML = '';
+
+        function getBestFitSize() {
+            const vw = window.innerWidth * 0.98;
+            const vh = window.innerHeight * 0.98;
+            let width = vw, height = vw / aspectRatio;
+            if (height > vh) {
+                height = vh;
+                width = vh * aspectRatio;
+            }
+            return { width: Math.floor(width), height: Math.floor(height) };
+        }
+
+        let pageFlip;
+
+        function mountPageFlip() {
+            const { width, height } = getBestFitSize();
+            book.innerHTML = '';
+            pageFlip = new St.PageFlip(book, {
+                width: width,
+                height: height,
+                size: "fixed",
+                minWidth: 100,
+                minHeight: 100,
+                maxWidth: 4096,
+                maxHeight: 4096,
+                maxShadowOpacity: 0.5,
                 showCover: false,
                 mobileScrollSupport: true
             });
-            const flipPages = pageImages.map(src => ({ src }));
-            flip.loadFromImages(flipPages);
-
-            // Botões/navegação
-            const btns = document.querySelector('.page-btns');
-            btns.style.display = 'flex';
-            const prevBtn = document.getElementById('prev-page');
-            const nextBtn = document.getElementById('next-page');
-            const slider = document.getElementById('page-slider');
-            slider.max = flipPages.length;
-            slider.value = 1;
-
-            prevBtn.onclick = () => flip.flipPrev();
-            nextBtn.onclick = () => flip.flipNext();
-            slider.oninput = e => flip.flipToPage(Number(slider.value)-1);
-            flip.on('flip', e => { slider.value = e.data + 1; });
-
-            // Tela cheia
-            const fullBtn = document.getElementById('toggle-full');
-            fullBtn.onclick = () => {
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen();
-                    fullBtn.textContent = '🗗 Sair da Tela Cheia';
-                } else {
-                    document.exitFullscreen();
-                    fullBtn.textContent = '🗖 Tela Cheia';
-                }
-            };
-            document.addEventListener('fullscreenchange', () => {
-                if (!document.fullscreenElement)
-                    fullBtn.textContent = '🗖 Tela Cheia';
-            });
-            window.addEventListener('resize', () => {
-                flip.update({
-                    width: Math.min(1100, window.innerWidth*0.99),
-                    height: Math.min(980, window.innerHeight*0.97)
-                });
-            });
-        } catch (e) {
-            document.getElementById('carregando').textContent = 'Erro ao carregar o PDF. ' + e;
-            console.error(e);
+            pageFlip.loadFromImages(paginas);
         }
+
+        mountPageFlip();
+
+        window.onresize = () => {
+            mountPageFlip();
+        };
     }
-    renderFlipbook(arquivo);
-    </script>
+
+    // Carrega e monta o livro
+    renderPDF().then(res => criarLivro(res.pages, res.aspectRatio));
+  </script>
 </body>
 </html>
