@@ -1,3 +1,4 @@
 [
-  { "nome": "Fragmentos da Eternidade", "arquivo": "PDF/Fragmentos-da-Eternidade.pdf" }
+  { "file": "PDF/Fragmentos-da-Eternidade.pdf", "title": "Fragmentos da Eternidade" },
+  { "file": "PDF/Outro-Livro.pdf", "title": "Outro Livro Exemplo" }
 ]
